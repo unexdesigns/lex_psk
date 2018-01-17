@@ -1,0 +1,19 @@
+.btn.btn-round{
+	padding-left:  $gutter;
+	padding-right: $gutter;
+	border-radius: 4em;
+	transition: all .3s;
+	&:hover{
+		padding-left : $gutter*1.35;
+		padding-right: $gutter*1.35;
+	}
+}
+
+.btn-gradient{
+	background-image: linear-gradient(to top, rgba(#000, .12), rgba(#fff, .12) 90%);
+	&:hover, 
+	&.focus,
+	&:focus{
+		background-position: 50% -125%;
+	} 
+}

@@ -1,0 +1,50 @@
+@import 'variables';
+@import '~bootstrap-material-design/scss/bootstrap-material-design';
+@import '~bourbon/core/bourbon';
+
+@mixin fullscreen(){
+	@include position(absolute, 0);
+	@include size(100%);
+}
+
+@import 'buttons';
+
+.text-inherit{
+	color: inherit;
+}
+
+header{
+	//@include position(fixed, 0 null null 0);
+	//width: 100%;
+	background: #fff;
+	z-index: $zindex-fixed;
+}
+
+section{
+	position: relative;
+	padding: $gutter*2 0;
+	&#hero {
+		height: 85vh;
+	}
+} 
+
+.overlay{
+
+	background-color: rgba(#444, .12);
+	background-image: linear-gradient(45deg, 
+		rgba(#2b1428, 0.7), 
+		rgba(#2b1428, 0.87), 
+		rgba(#2b1428, 0.7)
+	);
+}
+
+.fullscreen{
+	@include fullscreen();	
+}
+
+#map{
+	height: 100%;
+	&-c{
+		@include fullscreen();
+	}
+}
