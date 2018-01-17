@@ -1,0 +1,2 @@
+let style = [];
+export {style};

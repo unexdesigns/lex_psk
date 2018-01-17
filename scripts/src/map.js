@@ -2,7 +2,8 @@
  * Čia talpinamas visas funkcionalumas susijęs su Google Maps API
  */
 
-import {data} from './map.data.js';
+import {data}  from './map.data.js';
+import {style} from './map.style.js';
 
 class xMap {
 	constructor(element, config){
@@ -19,6 +20,7 @@ class xMap {
 				fullscreenControl: false,
 				mapTypeControl: false,
 				streetViewControl: false,
+				styles: style
 			}
 		};
 		
