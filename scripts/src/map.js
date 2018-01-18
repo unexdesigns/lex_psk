@@ -27,7 +27,7 @@ class xMap {
 		
 		// Inicializacija vidinės konfiguracijos
 		this.config       = {};
-		this.dependencies = ['/vendor/map-icons/dist/js/map-icons.min.js']
+		this.dependencies = []
 		this.element      = $(element)[0];
 		this.map          = {};
 		this.markers      = [];
@@ -45,6 +45,8 @@ class xMap {
 	/** Sukuria žemėlapį, sudeda markerius ir parengia funkcionalumą */
 	init() {
 		this.map = new google.maps.Map(this.element, this.config.map);
+
+		
  
 		$script(this.dependencies, () => {
 			this.addMarkers();

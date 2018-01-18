@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "webpack",
-    "dev": "webpack --env.NODE_ENV=dev --progress",
-    "dev:server": "webpack-dev-server --env.NODE_ENV=dev --progress",
-    "prod": "webpack --env.NODE_ENV=prod --progress"
+    "dev": "webpack --env.NODE_ENV=dev --progress --colors",
+    "dev:server": "webpack-dev-server --env.NODE_ENV=dev --progress --colors",
+    "prod": "webpack --env.NODE_ENV=prod --progress --colors"
   },
   "author": "Lexita",
   "license": "ISC",
@@ -17,6 +17,7 @@
     "bootstrap-material-design": "^4.0.0-beta.4",
     "jquery": "^3.2.1",
     "lodash": "^4.17.4",
+    "map-icons": "^3.0.3",
     "popper.js": "^1.12.9",
     "scriptjs": "^2.5.8"
   },
