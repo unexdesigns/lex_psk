@@ -1,9 +1,10 @@
 /**
  * Čia talpinamas visas funkcionalumas susijęs su Google Maps API
  */
-
-import {data}  from './map.data.js';
-import {style} from './map.style.js';
+  
+import {data}    from './map.data.js';
+import {style}   from './map.style.js';
+import $script from 'scriptjs';
 
 class xMap {
 	constructor(element, config){
@@ -25,10 +26,11 @@ class xMap {
 		};
 		
 		// Inicializacija vidinės konfiguracijos
-		this.element = $(element)[0];
-		this.map     = {};
-		this.config  = {};
-		this.markers = [];
+		this.config       = {};
+		this.dependencies = ['/vendor/map-icons/dist/js/map-icons.min.js']
+		this.element      = $(element)[0];
+		this.map          = {};
+		this.markers      = [];
 
 		this.config.map = Object.assign({}, defaults.map, config);
 
@@ -38,12 +40,16 @@ class xMap {
 
 		this.element.xmap = this;
 	}
+	
 
 	/** Sukuria žemėlapį, sudeda markerius ir parengia funkcionalumą */
 	init() {
 		this.map = new google.maps.Map(this.element, this.config.map);
-		this.addMarkers();
-		this.fitMarkers();
+ 
+		$script(this.dependencies, () => {
+			this.addMarkers();
+			this.fitMarkers();
+		})
 	}
 
 	/** Sudeda duomenis iš globalaus `data` kintamojo į žemėlapį */
@@ -77,7 +83,18 @@ class xMap {
 	 */
 	addMarker (markerConfig) {
 		let defaults = {
-			map: this.map
+			map: this.map,
+			icon: {
+				path: SQUARE_PIN,
+				fillColor: '#e0635a',
+				fillOpacity: 1,
+				strokeColor: 'rgba(0, 0, 0, .12)',
+				strokeWeight: 1,
+			},
+			label: {
+				fontFamily: 'Font Awesome\ 5 Free',
+				text: ""
+    		}
 		}, marker = new google.maps.Marker(
 			Object.assign({}, defaults, markerConfig)
 		)
