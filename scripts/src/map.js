@@ -48,10 +48,9 @@ class xMap {
 
 		
  
-		$script(this.dependencies, () => {
-			this.addMarkers();
-			this.fitMarkers();
-		})
+		this.addMarkers();
+		this.clusterMarkers();
+		this.fitMarkers();
 	}
 
 	/** Sudeda duomenis iš globalaus `data` kintamojo į žemėlapį */
@@ -84,19 +83,16 @@ class xMap {
 	 * @memberof xMap
 	 */
 	addMarker (markerConfig) {
+		let image = {
+			url: '/prototype/bin/marker.png', 
+			origin: new google.maps.Point(0, 0),
+			anchor: new google.maps.Point(14, 28),
+			scaledSize: new google.maps.Size(28, 28)
+		};
+
 		let defaults = {
 			map: this.map,
-			icon: {
-				path: SQUARE_PIN,
-				fillColor: '#e0635a',
-				fillOpacity: 1,
-				strokeColor: 'rgba(0, 0, 0, .12)',
-				strokeWeight: 1,
-			},
-			label: {
-				fontFamily: 'Font Awesome\ 5 Free',
-				text: ""
-    		}
+			icon: image, 
 		}, marker = new google.maps.Marker(
 			Object.assign({}, defaults, markerConfig)
 		)
@@ -104,6 +100,26 @@ class xMap {
 		this.markers.push(marker);
 
 		return marker;
+	}
+
+	clusterMarkers() {
+		var clusterStyles = [
+			{
+				textColor: 'rgba(0, 0, 0, 0.57)',
+				url: '/prototype/bin/m1.png',
+				height: 36,
+				width: 36
+			} 
+		];
+
+		var clusterOptions = {
+			gridSize: 36,
+			styles: clusterStyles
+		};
+
+		require(['js-marker-clusterer'], () => {
+			let clusterer = new MarkerClusterer(this.map, this.markers, clusterOptions);
+		});
 	}
 }
 
@@ -145,6 +161,7 @@ function parseGlobalData(){
 	});
 }
 
+/** Grąžina vieną sujungtą vietų masyvą */
 function getPlaces(){
 	let places_array = [];
 
