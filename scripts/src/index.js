@@ -1,6 +1,5 @@
 import $ from 'jquery';
-import _ from 'lodash';
-
+import _ from 'lodash'; 
 
 import 'bootstrap-material-design';
 import './../../styles/scss/app.scss';

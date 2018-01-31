@@ -1,281 +1,297 @@
-/* eslint "parserOptions/sourceType": "module" */
-
-/**
- * Čia talpinamas visas funkcionalumas susijęs su Google Maps API
- */
+/* Čia talpinamas visas funkcionalumas susijęs su Google Maps API */
+/* global MarkerClusterer */
 
 import {data}    from './map.data.js';
 import {style}   from './map.style.js';
-import $script from 'scriptjs';
 
+/** Klasė operuoti su Google Maps */
 class xMap {
-	constructor(element, config){
-		// Defaults
-		const defaults = {
-			map: {
-				center: {
-					lat: 55.513661757303204,
-					lng: 382.3113278808594
-				},
-				zoom: 9,
-				minZoom: 8,
-				gestureHandling: 'greedy',
-				fullscreenControl: false,
-				mapTypeControl: false,
-				streetViewControl: false,
-				styles: style
-			}
-		};
+    /** Inicializuojami numatyti objektai
+     * @param {HTMLElement} element, elementas, kuriame bus kraunamas žemėlapis
+     * @param {object} [config] - žemėlapio konfiguracija
+     */
+    constructor(element, config) {
+        // Defaults
+        const defaults = {
+            map: {
+                center: {
+                    lat: 55.513661757303204,
+                    lng: 382.3113278808594,
+                },
+                zoom             : 9,
+                minZoom          : 8,
+                gestureHandling  : 'greedy',
+                fullscreenControl: false,
+                mapTypeControl   : false,
+                streetViewControl: false,
+                styles           : style,
+            },
+        };
 
-		// Inicializacija vidinės konfiguracijos
-		this.config       = {};
-		this.dependencies = []
-		this.element      = $(element)[0];
-		this.map          = {};
-		this.markers      = [];
+        // Inicializacija vidinės konfiguracijos
+        this.config = {};
+        this.dependencies = [];
+        this.element = $(element)[0];
+        this.map = {};
+        this.markers = [];
 
-		this.config.map = Object.assign({}, defaults.map, config);
+        this.config.map = Object.assign({}, defaults.map, config);
 
-		require(['js-marker-clusterer'], () => {
-			this.init();
-		});
+        this.init();
 
+        // Post inicializacija
 
-		// Post inicializacija
+        this.element.xmap = this;
+    }
 
-		this.element.xmap = this;
-	}
+    /** Sukuria žemėlapį, sudeda markerius ir parengia funkcionalumą */
+    init() {
+        this.map = new google.maps.Map(this.element, this.config.map);
+        this.addMarkers();
+        this.clusterMarkers();
+        this.fitMarkers();
+        // this.route();
+        this.events();
+    }
 
-	/** Sukuria žemėlapį, sudeda markerius ir parengia funkcionalumą */
-	init() {
-		this.map = new google.maps.Map(this.element, this.config.map);
-		this.addMarkers();
-		this.clusterMarkers();
-		this.fitMarkers();
-		this.route();
-		this.events();
-	}
+    /** Elgesys į įvairius 'click', 'load' įvykius */
+    events() {
+    }
 
-	events() {
-	}
+    /** Sudeda duomenis iš globalaus `data` kintamojo į žemėlapį */
+    addMarkers() {
+        getPlaces().forEach((place, i) => {
+            this.addMarker({
+                title   : place.name,
+                position: place.position,
+            });
+        });
+    }
 
-	/** Sudeda duomenis iš globalaus `data` kintamojo į žemėlapį */
-	addMarkers () {
-		getPlaces().forEach((place, i) => {
-			let marker = this.addMarker({
-				title: place.name,
-				position: place.position
-			});
-		});
+    /** Sutalpina visus žemėlapio markerius į ekraną */
+    fitMarkers() {
+        let bounds = new google.maps.LatLngBounds();
 
-	}
+        this.markers.forEach((marker) => {
+            bounds.extend(marker.getPosition());
+        });
 
-	/** Prizoominą žemėlapį, kad matytųsi visi markeriai */
-	fitMarkers(){
-		let bounds = new google.maps.LatLngBounds();
+        this.map.fitBounds(bounds);
+    }
 
-		this.markers.forEach(marker => {
-			bounds.extend(marker.getPosition());
-		})
+    /**
+     * Prideda markerį prie žemėlapio
+     * @param {MarkerOptions} markerConfig
+     * @return {Marker}
+     * @memberof xMap
+     */
+    addMarker(markerConfig) {
+        let marker = new google.maps.Marker(
+            Object.assign({}, {
+                map   : this.map,
+                icon  : this.default.marker.icon,
+                zIndex: 100,
+            }, markerConfig)
+        );
 
-		this.map.fitBounds(bounds);
-	}
+        this.markers.push(marker);
 
-	/**
-	 * Prideda markerį prie žemėlapio
-	 * @param {MarkerOptions} markerConfig
-	 * @returns {Marker}
-	 * @memberof xMap
-	 */
-	addMarker (markerConfig) {
-		let marker = new google.maps.Marker(
-			Object.assign({}, {
-				map: this.map,
-				icon: this.default.marker.icon,
-			}, markerConfig)
-		);
+        return marker;
+    }
 
-		this.markers.push(marker);
+    /** Paslepia visus markerius */
+    hideMarkers() {
+        this.markers.forEach((marker, i) => {
+            this.markers[i].setMap(null);
+        });
+        this.clusterer.clearMarkers();
+    }
 
-		return marker;
-	}
+    /** Rodo visus markerius */
+    showMarkers() {
+        this.markers.forEach((marker) => {
+            marker.setMap(this.map);
+        });
+        this.clusterMarkers();
+    }
 
-	/** Paslepia visus markerius */
-	hideMarkers () {
-		this.markers.forEach((marker, i) => {
-			this.markers[i].setMap(null);
-		});
-		this.clusterer.clearMarkers();
-	}
+    /** Sugrupuoja artimai esančius žymeklius */
+    clusterMarkers() {
+        this.clusterer = new MarkerClusterer(this.map, this.markers, {
+            gridSize: 36,
+            styles  : this.default.cluster.styles,
+        });
+    }
 
-	/** Rodo visus markerius */
-	showMarkers () {
-		this.markers.forEach(marker => {
-			marker.setMap(this.map);
-		});
-		this.clusterMarkers();
-	}
+    /** Inicializuoja `directions service`, paskaičiuoja ir rodo maršrutą  */
+    route() {
+        let places = this.markers.slice(4, 8),
+            routeIcon = {
+                url       : '/prototype/bin/route_marker.png',
+                origin    : new google.maps.Point(0, 0),
+                anchor    : new google.maps.Point(12, 12),
+                scaledSize: new google.maps.Size(24, 24),
+            };
 
-	clusterMarkers() {
-		this.clusterer = new MarkerClusterer(this.map, this.markers, {
-			gridSize: 36,
-			styles: this.default.cluster.styles
-		});
-	}
+        // Directions
+        this.directions = {
+            markers : places,
+            Service : new google.maps.DirectionsService(),
+            Renderer: new google.maps.DirectionsRenderer({
+                map          : this.map,
+                markerOptions: {
+                    icon: routeIcon,
+                },
+                polylineOptions: {
+                    strokeColor: '#E64D4F',
+                },
+            }),
+        };
+        this.directions.markers = places;
+        this.directions.Service = new google.maps.DirectionsService();
 
-	/** Inicializuoja `directions service`, paskaičiuoja ir rodo maršrutą  */
-	route() {
-		let places = this.markers.slice(0, 4);
+        let mar = this.directions.markers,
+            ren = this.directions.Renderer;
 
-		this.directions = {
-			markers: places,
-			Service: new google.maps.DirectionsService(),
-			Renderer: new google.maps.DirectionsRenderer({
-				map: this.map,
-				markerOptions: {
-					icon: {
-						url: '/prototype/bin/route_marker.png',
-						origin: new google.maps.Point(0, 0),
-						anchor: new google.maps.Point(9, 9),
-						scaledSize: new google.maps.Size(18, 18)
-					}
-				},
-				polylineOptions: {
-					strokeColor: '#E64D4F'
-				}
-			})
-		};
-		this.directions.markers = places;
-		this.directions.Service  = new google.maps.DirectionsService();
+        // Parametrai maršruto užklausai
+        this.directions.request = {
+            origin     : mar[0].getPosition(),
+            destination: mar[mar.length - 1].getPosition(),
+            waypoints  : mar.slice(1, mar.length - 1).map((marker) => {
+                return {
+                    location: marker.position,
+                };
+            }),
+            travelMode: 'DRIVING',
+        };
 
+        console.log(this.directions.request);
 
+        this.directions.Service.route(this.directions.request, (result, code) => {
+            if (code === 'OK') {
+                this.hideMarkers();
 
-		/** Parametrai maršruto užklausai  */
-		this.directions.request = {
-			origin:      this.directions.markers[0].getPosition(),
-			destination: this.directions.markers[this.directions.markers.length - 1].getPosition(),
-			waypoints  : this.directions.markers.slice(1, this.directions.markers.length).map(marker => {
-				return {
-					location: marker.position
-				}
-			}),
-			travelMode: 'DRIVING',
-		}
+                // enable routed markers
+                mar.forEach((marker) => {
+                    marker.setMap(this.map);
+                });
 
-		this.directions.Service.route(this.directions.request, (result, status) => {
-			if (status === 'OK') {
-				this.hideMarkers();
+                ren.setDirections(result);
+            } else {
+                console.log('ROUTE ERROR: ' + code, result);
+            }
+        });
 
-				// enable routed markers
-				this.directions.markers.forEach((marker) => {
-					marker.setMap(this.map);
-				})
+        // HACK | Maršruto sukurtų markerių išlupimas
+        // https://stackoverflow.com/questions/18770599/display-label-for-each-waypoint-pin-on-google-map-api
 
-				this.directions.Renderer.setDirections(result);
-			} else {
-				console.log('ROUTE ERROR: ' + status, result);
-			}
-		});
+        google.maps.event.addListener(ren, 'directions_changed', () => {
+                var markersArray = []; // empty the array
 
-		// HACK | Maršruto sukurtų markerių išlupimas
-		// https://stackoverflow.com/questions/18770599/display-label-for-each-waypoint-pin-on-google-map-api
+                setTimeout(function() { // wait until markers render
+                    for (var k in ren) { // search everything in directionsDisplay
+                        if (typeof ren[k].markers != 'undefined') { //  its that the markers?
+                            ren[k].markers.forEach((m, i) => {
+                                markersArray.push(m);
+                                m.setLabel({ // lets change the label!
+                                    color     : 'rgba(0, 0, 0, .58)',
+                                    fontSize  : '12px',
+                                    fontWeight: '700',
+                                    text      : (i + 1).toString(),
+                                });
 
-		google.maps.event.addListener(this.directions.Renderer, 'directions_changed', function () {
-				var self = this,
-					markersArray = []; //empty the array
+                                if (i < ren[k].markers.length - 1) {
+                                    m.setIcon(Object.assign({}, routeIcon,
+                                        {url: '/prototype/bin/route_marker_yellow.png'}
+                                    ));
+                                }
+                            });
+                        }
+                    }
+                    console.log(markersArray); // now markersArray have all the markers
+                }, 0);
+            });
+    }
 
-				setTimeout(function () { //wait until markers render
-					for (var k in self) { //search everything in directionsDisplay
-						if (typeof self[k].markers != 'undefined') { //  its that the markers?
-							var markers = self[k].markers;
-							for (var i = 0; i < markers.length; ++i) {
-								markersArray.push(markers[i]);
-								markersArray[i].setLabel({ //lets change the label!
-									color: "black",
-									fontSize: "16px",
-									text: i.toString()
-								});
-							}
-						}
-					}
-					console.log(markersArray); // now markersArray have all the markers 
-				}, 0);
-			});
-
-	}
-
-	get default() {
-		return {
-			marker: {
-				icon: {
-					url: '/prototype/bin/marker.png',
-					origin: new google.maps.Point(0, 0),
-					anchor: new google.maps.Point(14, 28),
-					scaledSize: new google.maps.Size(28, 28)
-				}
-			},
-			cluster: {
-				styles: [{
-					textColor: 'rgba(0, 0, 0, 0.57)',
-					url: '/prototype/bin/m1.png',
-					height: 36,
-					width: 36
-				}]
-			}
-		}
-	}
+    /** Numatyti parametrai įvairiems žemėlapio objektams (markeriams, clusteriams) */
+    get default() {
+        return {
+            marker: {
+                icon: {
+                    url       : '/prototype/bin/marker.png',
+                    origin    : new google.maps.Point(0, 0),
+                    anchor    : new google.maps.Point(14, 28),
+                    scaledSize: new google.maps.Size(28, 28),
+                },
+            },
+            cluster: {
+                styles: [{
+                    textColor: 'rgba(0, 0, 0, 0.57)',
+                    url      : '/prototype/bin/m1.png',
+                    height   : 36,
+                    width    : 36,
+                }],
+            },
+        };
+    }
 }
+
+/** Ši funkcija kviečiama, kai užkraunamas Google Maps API */
+function initMap() {
+    require(['js-marker-clusterer'], () => {
+        new xMap('#map');
+    });
+}
+
+/* exports parseGlobalData */
+/** Paima pavadinimus iš `./map-data.js` ir geokoduoja į koordinates */
+function parseGlobalData() {
+    data.forEach((region) => {
+        Promise.all(region.places.map((place) => {
+            return new Promise((resolve) => {
+                $.get('https://maps.googleapis.com/maps/api/geocode/json', {
+                    address: place.name,
+                    key    : 'AIzaSyCwsqyR30H2vUlJuTotTffzLQpPnfvgG0E',
+                }, (res) => {
+                    res.location_id = region.location_id;
+                    res.place_id = place.place_id;
+                    resolve(res);
+                });
+            });
+        })).then((responses) => {
+            responses.forEach((response) => {
+                if (response.status === 'OK') {
+                    let places = _.find(data, {
+                        location_id: response.location_id,
+                    }).places;
+
+                    let place = _.find(places, {
+                        place_id: response.place_id,
+                    });
+
+                    place.parsed = response.results[0];
+                }
+            });
+        });
+    });
+}
+
+/** Grąžina vieną sujungtą vietų masyvą
+ * @return {array}
+*/
+function getPlaces() {
+    let places_array = [];
+
+    data.forEach((location) => {
+        location.places.forEach((place) => {
+            places_array.push(place);
+        });
+    });
+
+    return places_array;
+}
+
 
 window.map = map;
-
-function initMap(){
-	new xMap('#map');
-}
-
-/** Paima pavadinimus iš `./map-data.js` ir geokoduoja į koordinates */
-function parseGlobalData(){
-	data.forEach(region => {
-		Promise.all(region.places.map(place => {
-			return new Promise(resolve => {
-				$.get('https://maps.googleapis.com/maps/api/geocode/json', {
-					address: place.name,
-					key: 'AIzaSyCwsqyR30H2vUlJuTotTffzLQpPnfvgG0E'
-				}, res => {
-					res.location_id = region.location_id;
-					res.place_id = place.place_id;
-					resolve(res);
-				});
-			});
-		})).then(responses => {
-			responses.forEach(response => {
-				if (response.status === 'OK') {
-					let places = _.find(data, {
-						location_id: response.location_id
-					}).places;
-
-					let place = _.find(places, {
-						place_id: response.place_id
-					});
-
-					place.parsed = response.results[0];
-				}
-			});
-		});
-	});
-}
-
-/** Grąžina vieną sujungtą vietų masyvą */
-function getPlaces(){
-	let places_array = [];
-
-	data.forEach(location => {
-		location.places.forEach(place => {
-			places_array.push(place);
-		})
-	})
-
-	return places_array;
-}
-
 window.data = data;
 window.initMap = initMap;
